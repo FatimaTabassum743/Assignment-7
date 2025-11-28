@@ -1,176 +1,147 @@
-
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Calculator</title>
-
-
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
+  <title>Todo with Edit & LocalStorage</title>
+  <style>
+    .todo-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
     }
-
-
-    body {
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #e9e9e9;
+    .todo-item.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
     }
-
-
-    .calculator {
-        width: 320px;
-        background: #fff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    .btn {
+      padding: 5px 10px;
+      cursor: pointer;
+      border: none;
+      color: white;
     }
-
-
-    #display {
-        width: 100%;
-        height: 60px;
-        margin-bottom: 15px;
-        text-align: right;
-        padding: 10px;
-        font-size: 24px;
-        border: none;
-        outline: none;
-        border-radius: 8px;
-        background: #f2f2f2;
+    .delete-btn {
+      background: red;
     }
-
-
-    .buttons {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
+    .edit-btn {
+      background: green;
     }
-
-
-    button {
-        padding: 18px;
-        font-size: 18px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        background: #d9d9d9;
-        transition: 0.2s;
-    }
-
-
-    button:hover {
-        background: #c2c2c2;
-    }
-
-
-    .operator {
-        background: #ff9500;
-        color: white;
-    }
-
-
-    .operator:hover {
-        background: #e08900;
-    }
-
-
-    .equal {
-        background: #28a745;
-        color: white;
-    }
-
-
-    .equal:hover {
-        background: #1e7e34;
-    }
-
-
-    .clear {
-        background: #dc3545;
-        color: white;
-    }
-
-
-    .clear:hover {
-        background: #b52a37;
-    }
-</style>
-
-
+  </style>
 </head>
 <body>
 
 
-<div class="calculator">
-    <input type="text" id="display" disabled />
+<div id="app">
+  <h1>My To-Do List</h1>
 
 
-    <div class="buttons">
-        <button class="clear" onclick="clearDisplay()">C</button>
-        <button onclick="delChar()">DEL</button>
-        <button class="operator" onclick="append('/')">/</button>
-        <button class="operator" onclick="append('*')">*</button>
+  <div id="inputContainer">
+    <input type="text" id="todoInput" placeholder="Add a new task">
+    <button id="addBtn">Add</button>
+  </div>
 
 
-        <button onclick="append('7')">7</button>
-        <button onclick="append('8')">8</button>
-        <button onclick="append('9')">9</button>
-        <button class="operator" onclick="append('-')">-</button>
-
-
-        <button onclick="append('4')">4</button>
-        <button onclick="append('5')">5</button>
-        <button onclick="append('6')">6</button>
-        <button class="operator" onclick="append('+')">+</button>
-
-
-        <button onclick="append('1')">1</button>
-        <button onclick="append('2')">2</button>
-        <button onclick="append('3')">3</button>
-        <button class="equal" onclick="calculate()">=</button>
-
-
-        <button onclick="append('0')" style="grid-column: span 2;">0</button>
-        <button onclick="append('.')">.</button>
-    </div>
+  <ul id="todoList"></ul>
 </div>
 
 
 <script>
-    const display = document.getElementById("display");
+  const todoInput = document.getElementById("todoInput");
+  const addBtn = document.getElementById("addBtn");
+  const todoList = document.getElementById("todoList");
 
 
-    function append(value) {
-        display.value += value;
+  // Load todos from LocalStorage
+  function loadTodos() {
+    const todos = JSON.parse(localStorage.getItem("todos")) || [];
+    todos.forEach(todo => renderTodo(todo.text, todo.completed));
+  }
+
+
+  // Save todos to LocalStorage
+  function saveTodos() {
+    const items = document.querySelectorAll(".todo-item");
+    const todos = [];
+
+
+    items.forEach(item => {
+      todos.push({
+        text: item.querySelector("span").textContent,
+        completed: item.classList.contains("completed")
+      });
+    });
+
+
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }
+  // Render a todo item
+  function renderTodo(text, completed = false) {
+    const li = document.createElement("li");
+    li.className = "todo-item";
+    if (completed) li.classList.add("completed");
+    const span = document.createElement("span");
+    span.textContent = text;
+    // Edit button
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.className = "btn edit-btn";
+    editBtn.addEventListener("click", () => {
+      const newText = prompt("Edit task:", span.textContent);
+      if (newText !== null && newText.trim() !== "") {
+        span.textContent = newText.trim();
+        saveTodos();
+      }
+    });
+    // Delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete";
+    deleteBtn.className = "btn delete-btn";
+    deleteBtn.addEventListener("click", () => {
+      li.remove();
+      saveTodos();
+    });
+    // Toggle completed
+    span.addEventListener("click", () => {
+      li.classList.toggle("completed");
+      saveTodos();
+    });
+
+
+    li.appendChild(span);
+    li.appendChild(editBtn);
+    li.appendChild(deleteBtn);
+    todoList.appendChild(li);
+  }
+  // Add todo
+  function addTodo() {
+    const text = todoInput.value.trim();
+    if (!text) {
+      alert("Please enter a task");
+      return;
     }
 
 
-    function clearDisplay() {
-        display.value = "";
-    }
+    renderTodo(text);
+    saveTodos();
 
 
-    function delChar() {
-        display.value = display.value.slice(0, -1);
-    }
+    todoInput.value = "";
+    todoInput.focus();
+  }
 
 
-    function calculate() {
-        try {
-            display.value = eval(display.value);
-        } catch {
-            display.value = "Error";
-        }
-    }
+  addBtn.addEventListener("click", addTodo);
+
+
+  todoInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") addTodo();
+  });
+
+
+  // Load saved data on start
+  loadTodos();
 </script>
 
 
